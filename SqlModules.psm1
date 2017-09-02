@@ -46,7 +46,22 @@ function OpenSQLConnection([string]$serverName, [string]$user, [string]$password
 
 }
 
-# TODO: Function to break into batches and execute?
+#<#
+#.Synopsis
+#	Function to execute query SQL command batch
+#.Description
+#	Execute query SQL command batch, and return a DataTable object of the results to the caller.
+#.Parameter sqlConnection
+#    System.Data.SqlClient.SqlConnection object against which to query
+#.Parameter query
+#    Query string to use to query against the sqlConnection
+#.Parameter args
+#    An dictionary of objects to reassign in the query, in the 
+#.Example
+#	$ret = ExecuteNonQuery $sqlConnection "SELECT Column_Foo FROM DatabaseBOO.dbo.Table_BAR WHERE Column_Baz = @Query" -args @{Query="Bang"}
+#   $ret | Format-Table
+#   (table of results shown here)
+##>
 function ExecuteQuery(
     [System.Data.SqlClient.SqlConnection]$sqlConnection,
     [string]$query,
@@ -63,11 +78,29 @@ function ExecuteQuery(
     }
 
     [System.Data.DataTable]$returnTable = New-Object System.Data.DataTable
-    $returnTable.Load( $cmd.ExecuteReader() )
+    $reader = $cmd.ExecuteReader()
+    $returnTable.Load($reader)
+
+    $reader.Close()
+    Write-Host "$($reader.RecordsAffected) rows affected."
 
     return $returnTable
 }
 
+#<#
+#.Synopsis
+#	Function to execute non-query SQL command batch
+#.Description
+#	Execute non-query SQL command batch, and return number of rows affected.
+#.Parameter sqlConnection
+#    System.Data.SqlClient.SqlConnection object against which to query
+#.Parameter query
+#    Query string to use to query against the sqlConnection
+#.Parameter args
+#    An dictionary of objects to reassign in the query, in the 
+#.Example
+#	ExecuteNonQuery $sqlConnection "SELECT Column_Foo FROM DatabaseBOO.dbo.Table_BAR WHERE Column_Baz = @Query" -args @{Query="Bang"}
+##>
 function ExecuteNonQuery(
     [System.Data.SqlClient.SqlConnection]$sqlConnection,
     [string]$query,
@@ -89,4 +122,22 @@ function ExecuteNonQuery(
 
     Write-Host("{0} rows affected." -f $rows)
     return $rows
+}
+
+# TODO: Function to break into batches and execute?
+
+function ExecuteFile(
+    [string]$queryFilePath
+)
+{
+    throw "Not yet implemented"
+}
+
+
+function ParseToBatches(
+    [string]$query
+)
+{
+    $queryBatches = @()
+    throw "Not yet implemented"
 }
