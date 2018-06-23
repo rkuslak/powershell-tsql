@@ -24,7 +24,25 @@
 ## ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 ## POSSIBILITY OF SUCH DAMAGE.
 
-function Open-SQLConnection() {
+#<#
+#.Synopsis
+#	Function to execute query SQL command batch
+#.Description
+#	Execute query SQL command batch, and return a DataTable object of the results to the caller.
+#.Parameter ServerName
+#   Name (and instance if needed) for SQL Server to connect to:
+#.Parameter Username
+#   Username to use to connect; if none provided, integrated security will
+#   be assumed:
+#.Parameter Password
+#   Password for connection
+#.Parameter Database
+#   Database name to use as "default" connection
+#.Example
+#	$ret = Get-SqlConnection $sqlConnection "Server\Instance" sa "SecurePassword" "Adventureworks2000"
+#   Get-Query $sql "SELECT 'Foo', 'Bar'" | Format-Table
+##>
+function Get-SqlConnection {
     [cmdletBinding()]
     param(
         [string]$ServerName,
@@ -67,11 +85,11 @@ function Open-SQLConnection() {
 #.Parameter args
 #    An dictionary of objects to reassign in the query, in the
 #.Example
-#	$ret = ExecuteNonQuery $sqlConnection "SELECT Column_Foo FROM DatabaseBOO.dbo.Table_BAR WHERE Column_Baz = @Query" -args @{Query="Bang"}
+#	$ret = Get-Query $sqlConnection "SELECT Column_Foo FROM DatabaseBOO.dbo.Table_BAR WHERE Column_Baz = @Query" -args @{Query="Bang"}
 #   $ret | Format-Table
 #   (table of results shown here)
 ##>
-function Get-SQLQuery {
+function Get-Query {
     [cmdletBinding()]
     param(
         [System.Data.SqlClient.SqlConnection]$sqlConnection,
@@ -85,7 +103,15 @@ function Get-SQLQuery {
     # Add keys (if any) to the query
     foreach ($key in $params.Keys)
     {
-        [void]$cmd.Parameters.AddWithValue("@$($key)", $params[$key])
+        # if passed a SqlNull, convert to a "real" null:
+        if (($null -ne $params[$key]) -and ($params[$key -eq [System.DBNull]::Value))
+        {
+            [void]$cmd.Parameters.AddWithValue("@$($key)", $null)
+        }
+        else
+        {
+            [void]$cmd.Parameters.AddWithValue("@$($key)", $params[$key])
+        }
     }
 
     [System.Data.DataTable]$returnTable = New-Object System.Data.DataTable
@@ -99,16 +125,3 @@ function Get-SQLQuery {
 
     return $returnTable
 }
-
-# TODO: Function to break into batches and execute?
-
-function Get-SQLFileQuery
-{
-    [cmdletBinding()]
-    param(
-        [System.Data.SqlClient.SqlConnection]$SQLConnection,
-        [string]$File
-    )
-    throw "Not yet implemented"
-}
-
